@@ -1,9 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.util.Random;
 
-public class PlateauJeu extends JFrame {
+public class PlateauJeuAdversaire extends JFrame {
+    private int[][] grilleAdversaire;
+    private JPanel gridPanel;
     String chemin = "/Users/ateli/OneDrive/Documents/cours supérieur/B2/C#/labo final/Naval Battle Assets/Naval Battle Assets/";
     private String porteAvionsPosition;
     private String porteAvionsOrientation;
@@ -30,40 +31,25 @@ public class PlateauJeu extends JFrame {
     ImageIcon sousMarinIconV = new ImageIcon(chemin + "SousMarin-vertical.png");
     ImageIcon missedShotIcon = new ImageIcon(chemin + "Rate.png");
 
-    private int[][] grilleJeu;
-    private JPanel gridPanel;
 
-    public PlateauJeu() {
-        setTitle("Bataille Navale - Plateau de jeu");
+    public PlateauJeuAdversaire() {
+        setTitle("Bataille Navale - Plateau de l'adversaire");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 600); // Ajustez la taille de la fenêtre pour qu'elle soit suffisamment grande
-        grilleJeu = new int[10][10];
-        for (int i = 0; i < grilleJeu.length; i++) {
-            for (int j = 0; j < grilleJeu[i].length; j++) {
-                grilleJeu[i][j] = 0;
+        setSize(1200, 600);
+
+        grilleAdversaire = new int[10][10];
+        for (int i = 0; i < grilleAdversaire.length; i++) {
+            for (int j = 0; j < grilleAdversaire[i].length; j++) {
+                grilleAdversaire[i][j] = 0;
             }
         }
-        // Affichez la boîte de dialogue pour la saisie des positions et de l'orientation des bateaux
-        PlacementBateauxDialog placementDialog = new PlacementBateauxDialog(this);
-        placementDialog.setVisible(true);
+        // Placement automatique des bateaux
+        placerBateau(5); // porte-avions
+        placerBateau(4); // croiseur
+        placerBateau(3); // contre-torpilleur
+        placerBateau(3); // sous-marin
+        placerBateau(2); // torpilleur
 
-        // Si l'utilisateur a confirmé, stockez les positions et les orientations des bateaux
-        if (placementDialog.isConfirmed()) {
-            porteAvionsPosition = placementDialog.getPorteAvionsPosition();
-            porteAvionsOrientation = placementDialog.getPorteAvionsOrientation();
-            croiseurPosition = placementDialog.getCroiseurPosition();
-            croiseurOrientation = placementDialog.getCroiseurOrientation();
-            torpilleurPosition = placementDialog.getTorpilleurPosition();
-            torpilleurOrientation = placementDialog.getTorpilleurOrientation();
-            sousMarinPosition = placementDialog.getSousMarinPosition();
-            sousMarinOrientation = placementDialog.getSousMarinOrientation();
-            contreTorpilleurPosition = placementDialog.getContreTorpilleurPosition();
-            contreTorpilleurOrientation = placementDialog.getContreTorpilleurOrientation();
-
-            // Stockez les positions et les orientations des autres bateaux ici
-        } else {
-            System.exit(0); // Quittez l'application si l'utilisateur n'a pas confirmé
-        }
         // Créez une barre de menus
         JMenuBar menuBar = new JMenuBar();
 
@@ -121,17 +107,129 @@ public class PlateauJeu extends JFrame {
 
         setContentPane(contentPane);
         setVisible(true);
-        this.addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyChar() == 'p') {
-                    // Créer et afficher l'interface PlateauJeuAdversaire lorsque 'p' est pressé
-                    PlateauJeuAdversaire plateauAdversaire = new PlateauJeuAdversaire();
-                    plateauAdversaire.setVisible(true);
+    }
+
+    private void genererPositionEtOrientation() {
+        Random random = new Random();
+        boolean positionsValides = false;
+
+        while (!positionsValides) {
+            porteAvionsPosition = (char) (random.nextInt(10) + 'A') + Integer.toString(random.nextInt(10) + 1);
+            porteAvionsOrientation = random.nextBoolean() ? "vertical" : "horizontal";
+            croiseurPosition = (char) (random.nextInt(10) + 'A') + Integer.toString(random.nextInt(10) + 1);
+            croiseurOrientation = random.nextBoolean() ? "vertical" : "horizontal";
+            torpilleurPosition = (char) (random.nextInt(10) + 'A') + Integer.toString(random.nextInt(10) + 1);
+            torpilleurOrientation = random.nextBoolean() ? "vertical" : "horizontal";
+            sousMarinPosition = (char) (random.nextInt(10) + 'A') + Integer.toString(random.nextInt(10) + 1);
+            sousMarinOrientation = random.nextBoolean() ? "vertical" : "horizontal";
+            contreTorpilleurPosition = (char) (random.nextInt(10) + 'A') + Integer.toString(random.nextInt(10) + 1);
+            contreTorpilleurOrientation = random.nextBoolean() ? "vertical" : "horizontal";
+
+            positionsValides = verifierPositions();
+        }
+    }
+    private boolean verifierPositions() {
+        if (!estPositionValide(porteAvionsPosition, porteAvionsOrientation, 5)) {
+            return false;
+        }
+        if (!estPositionValide(croiseurPosition, croiseurOrientation, 4)) {
+            return false;
+        }
+        if (!estPositionValide(torpilleurPosition, torpilleurOrientation, 3)) {
+            return false;
+        }
+        if (!estPositionValide(sousMarinPosition, sousMarinOrientation, 3)) {
+            return false;
+        }
+        if (!estPositionValide(contreTorpilleurPosition, contreTorpilleurOrientation, 2)) {
+            return false;
+        }
+        return true;
+    }
+    private boolean estPositionValide(String position, String orientation, int longueur) {
+        char lettrePosition = position.charAt(0);
+        int chiffrePosition = Integer.parseInt(position.substring(1));
+
+        // Transforme la lettre en indice de tableau
+        int lettreIndice = lettrePosition - 'A';
+
+        if (orientation.equals("horizontal")) {
+            for (int i = 0; i < longueur; i++) {
+                if (chiffrePosition + i > 9 || grilleAdversaire[lettreIndice][chiffrePosition + i] != 0) {
+                    return false;
                 }
             }
-        });
-        this.setFocusable(true);
+        } else { // orientation verticale
+            for (int i = 0; i < longueur; i++) {
+                if (lettreIndice + i > 9 || grilleAdversaire[lettreIndice + i][chiffrePosition] != 0) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
+
+    private String genererPosition() {
+        Random random = new Random();
+        char lettre = (char) ('A' + random.nextInt(10));
+        int chiffre = random.nextInt(10);
+        return String.valueOf(lettre) + chiffre;
+    }
+
+    private String genererOrientation() {
+        Random random = new Random();
+        return random.nextBoolean() ? "horizontal" : "vertical";
+    }
+
+    private void placerBateau(int longueur) {
+        String position;
+        String orientation;
+        do {
+            position = genererPosition();
+            orientation = genererOrientation();
+        } while (!estPositionValide(position, orientation, longueur));
+        switch (longueur) {
+            case 5: // porte-avions
+                porteAvionsPosition = position;
+                porteAvionsOrientation = orientation;
+                break;
+            case 4: // croiseur
+                croiseurPosition = position;
+                croiseurOrientation = orientation;
+                break;
+            case 3: // contre-torpilleur ou sous-marin
+                if (sousMarinPosition == null) {
+                    sousMarinPosition = position;
+                    sousMarinOrientation = orientation;
+                } else {
+                    contreTorpilleurPosition = position;
+                    contreTorpilleurOrientation = orientation;
+                }
+                break;
+            case 2: // torpilleur
+                torpilleurPosition = position;
+                torpilleurOrientation = orientation;
+                break;
+        }
+
+        char lettrePosition = position.charAt(0);
+        int chiffrePosition = Integer.parseInt(position.substring(1));
+        int lettreIndice = lettrePosition - 'A';
+
+        if (orientation.equals("horizontal")) {
+            for (int i = 0; i < longueur; i++) {
+                grilleAdversaire[lettreIndice][chiffrePosition + i] = 1;
+            }
+        } else {
+            for (int i = 0; i < longueur; i++) {
+                grilleAdversaire[lettreIndice + i][chiffrePosition] = 1;
+            }
+        }
+    }
+
+
+
 
     private JPanel createGridPanel(String imagePath, boolean isLeftGrid) {
         ImageIcon backgroundImage = new ImageIcon(imagePath);
@@ -170,7 +268,7 @@ public class PlateauJeu extends JFrame {
 
                     test = lettreCroiseur - 'A'+1;
                     if(croiseurOrientation=="Horizontal")
-                      switchchiffre(chiffreCroiseur,test, g, croiseurIcon);
+                        switchchiffre(chiffreCroiseur,test, g, croiseurIcon);
                     else
                         switchchiffre(chiffreCroiseur,test, g, croiseurIconV);
 
@@ -204,7 +302,7 @@ public class PlateauJeu extends JFrame {
 //                    g.drawImage(explosionIcon.getImage(),125 , 125, this);
 //                    g.drawImage(explosionIcon.getImage(),310 , 31, this);
 
-                 else {
+                else {
                     // Dessiner l'explosion sur un bateau ennemi sur la grille de droite (exemple)
                     g.drawImage(explosionIcon.getImage(), 150, 150, this);
 
